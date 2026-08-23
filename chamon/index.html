@@ -35,9 +35,13 @@ frame.addEventListener('load',()=>{
     const description=card.querySelector('.desc'); if(description) description.textContent=desc;
   }
 
-  function patchExercises(){
+  function currentDay(){
     const active=d.querySelector('.daybtn.active');
-    const day=active?active.dataset.day:(w.localStorage.getItem('fps_day')||'sun');
+    return active?active.dataset.day:(w.localStorage.getItem('fps_day')||'sun');
+  }
+
+  function patchExercises(){
+    const day=currentDay();
     const cards=[...d.querySelectorAll('.card')];
 
     if(day==='tue'){
@@ -57,8 +61,6 @@ frame.addEventListener('load',()=>{
       if(ext){
         const values=ext.querySelectorAll('.value');
         if(values[1]) values[1].textContent='Goma';
-        const desc=ext.querySelector('.desc');
-        if(desc) desc.textContent='Carga exigente pero controlable, sin fallo y controlando la bajada.';
       }
       const press=cards.find(c=>c.querySelector('h2')?.textContent.includes('Prensa unilateral'));
       if(press){
@@ -95,44 +97,49 @@ frame.addEventListener('load',()=>{
     if(bar) bar.style.width=`${all.length?(count/all.length)*100:0}%`;
   }
 
-  function patch(){
+  function applyViewPatches(){
     const hint=d.querySelector('.hint');
     if(hint) hint.textContent='Marca cada ejercicio al terminarlo.';
-
     patchExercises();
-
-    d.querySelectorAll('.complete').forEach(btn=>{
-      if(btn.dataset.fixed==='1') return;
-      btn.dataset.fixed='1';
-      btn.onclick=(ev)=>{
-        ev.preventDefault(); ev.stopPropagation();
-        const active=d.querySelector('.daybtn.active');
-        const day=active?active.dataset.day:(w.localStorage.getItem('fps_day')||'sun');
-        const i=Number(btn.dataset.i);
-        const k=`fps_${day}_${i}`;
-        const done=w.localStorage.getItem(k)==='1';
-        w.localStorage.setItem(k,done?'0':'1');
-        btn.classList.toggle('done',!done);
-        btn.textContent=!done?'✓ Completado':'Marcar como completado';
-        refreshProgress();
-      };
-    });
-
     refreshProgress();
-
-    const feed=d.getElementById('feed');
-    const app=d.querySelector('.app');
-    if(feed && app && feed.dataset.uxScroll!=='1'){
-      feed.dataset.uxScroll='1';
-      feed.addEventListener('scroll',()=>{
-        if(feed.scrollTop>24) app.classList.add('fps-compact');
-        else if(feed.scrollTop<8) app.classList.remove('fps-compact');
-      },{passive:true});
-    }
   }
 
-  patch();
-  new MutationObserver(patch).observe(d.body,{childList:true,subtree:true});
+  const feed=d.getElementById('feed');
+  const app=d.querySelector('.app');
+  if(feed && app){
+    feed.addEventListener('scroll',()=>{
+      if(feed.scrollTop>24) app.classList.add('fps-compact');
+      else if(feed.scrollTop<8) app.classList.remove('fps-compact');
+    },{passive:true});
+  }
+
+  d.addEventListener('click',(ev)=>{
+    const complete=ev.target.closest('.complete');
+    if(complete){
+      ev.preventDefault();
+      ev.stopImmediatePropagation();
+      const day=currentDay();
+      const i=Number(complete.dataset.i);
+      const k=`fps_${day}_${i}`;
+      const done=w.localStorage.getItem(k)==='1';
+      const next=!done;
+      w.localStorage.setItem(k,next?'1':'0');
+      complete.classList.toggle('done',next);
+      complete.textContent=next?'✓ Completado':'Marcar como completado';
+      refreshProgress();
+      return;
+    }
+
+    const dayBtn=ev.target.closest('.daybtn');
+    if(dayBtn){
+      setTimeout(()=>{
+        if(app) app.classList.remove('fps-compact');
+        applyViewPatches();
+      },0);
+    }
+  },true);
+
+  applyViewPatches();
 });
 </script>
 </body>
