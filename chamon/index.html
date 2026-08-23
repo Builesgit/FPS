@@ -26,9 +26,80 @@ frame.addEventListener('load',()=>{
   `;
   d.head.appendChild(uxStyle);
 
+  function setCard(card,{name,freq,intensity,material,desc}){
+    const h2=card.querySelector('h2'); if(h2) h2.textContent=name;
+    const big=card.querySelector('.big'); if(big) big.textContent=freq;
+    const values=card.querySelectorAll('.value');
+    if(values[0]) values[0].textContent=intensity;
+    if(values[1]) values[1].textContent=material;
+    const description=card.querySelector('.desc'); if(description) description.textContent=desc;
+  }
+
+  function patchExercises(){
+    const active=d.querySelector('.daybtn.active');
+    const day=active?active.dataset.day:(w.localStorage.getItem('fps_day')||'sun');
+    const cards=[...d.querySelectorAll('.card')];
+
+    if(day==='tue'){
+      const ext=cards.find(c=>c.querySelector('h2')?.textContent.includes('Extensión de cuádriceps unilateral'));
+      if(ext){
+        const values=ext.querySelectorAll('.value');
+        if(values[1]) values[1].textContent='Goma';
+        const desc=ext.querySelector('.desc');
+        if(desc) desc.textContent='Extiende la rodilla. Baja lentamente y no llegues al fallo.';
+      }
+      const press=cards.find(c=>c.querySelector('h2')?.textContent.includes('Prensa unilateral'));
+      if(press) press.remove();
+    }
+
+    if(day==='thu'){
+      const ext=cards.find(c=>c.querySelector('h2')?.textContent.includes('Extensión cuádriceps unilateral'));
+      if(ext){
+        const values=ext.querySelectorAll('.value');
+        if(values[1]) values[1].textContent='Goma';
+        const desc=ext.querySelector('.desc');
+        if(desc) desc.textContent='Carga exigente pero controlable, sin fallo y controlando la bajada.';
+      }
+      const press=cards.find(c=>c.querySelector('h2')?.textContent.includes('Prensa unilateral'));
+      if(press){
+        setCard(press,{
+          name:'Spanish Squat Dinámico',
+          freq:"3×8/lado · 75'' descanso",
+          intensity:'7/10',
+          material:'Goma',
+          desc:'Banda anclada detrás de las rodillas. Desciende de forma controlada hasta ~90° de flexión y vuelve extendiendo las rodillas, manteniendo el tronco estable y tensión constante en la banda.'
+        });
+      }
+    }
+
+    if(day==='fri'){
+      const ext=cards.find(c=>c.querySelector('h2')?.textContent==='Extensión cuádriceps');
+      if(ext){
+        setCard(ext,{
+          name:'Extensión de rodilla ISO con goma',
+          freq:"3×6 · 60'' descanso",
+          intensity:'6/10',
+          material:'Goma',
+          desc:'Carga moderada, ejecución controlada y sin buscar fatiga alta.'
+        });
+      }
+    }
+  }
+
+  function refreshProgress(){
+    const all=[...d.querySelectorAll('.complete')];
+    const count=all.filter(b=>b.classList.contains('done')).length;
+    const txt=d.getElementById('progressText');
+    const bar=d.getElementById('progressBar');
+    if(txt) txt.textContent=`${count}/${all.length}`;
+    if(bar) bar.style.width=`${all.length?(count/all.length)*100:0}%`;
+  }
+
   function patch(){
     const hint=d.querySelector('.hint');
     if(hint) hint.textContent='Marca cada ejercicio al terminarlo.';
+
+    patchExercises();
 
     d.querySelectorAll('.complete').forEach(btn=>{
       if(btn.dataset.fixed==='1') return;
@@ -43,14 +114,11 @@ frame.addEventListener('load',()=>{
         w.localStorage.setItem(k,done?'0':'1');
         btn.classList.toggle('done',!done);
         btn.textContent=!done?'✓ Completado':'Marcar como completado';
-        const all=[...d.querySelectorAll('.complete')];
-        const count=all.filter(b=>b.classList.contains('done')).length;
-        const txt=d.getElementById('progressText');
-        const bar=d.getElementById('progressBar');
-        if(txt) txt.textContent=`${count}/${all.length}`;
-        if(bar) bar.style.width=`${all.length?(count/all.length)*100:0}%`;
+        refreshProgress();
       };
     });
+
+    refreshProgress();
 
     const feed=d.getElementById('feed');
     const app=d.querySelector('.app');
